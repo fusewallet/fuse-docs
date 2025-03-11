@@ -1,34 +1,47 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { FlatCompat } from '@eslint/eslintrc';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import js from '@eslint/js';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 const compat = new FlatCompat({
-    baseDirectory: __dirname,
+    // import.meta.dirname is available after Node.js v20.11.0
+    baseDirectory: import.meta.dirname,
+    recommendedConfig: js.configs.recommended,
 });
 
-export default tseslint.config({
-    extends: [
-        js.configs.recommended,
-        // ...tseslint.configs.recommended,
-        ...tseslint.configs.strict,
-        ...tseslint.configs.stylistic,
-        ...compat.extends('next/core-web-vitals', 'next/typescript'),
-    ],
-    files: ['src/**/*.{ts,tsx}'],
-    ignores: ['dist'],
-    languageOptions: {
-        ecmaVersion: 2020,
-        globals: globals.browser,
+const eslintConfig = [
+    ...tseslint.config({
+        extends: [
+            js.configs.recommended,
+            // ...tseslint.configs.recommended,
+            ...tseslint.configs.strict,
+            ...tseslint.configs.stylistic,
+        ],
+        files: ['src/**/*.{ts,tsx}'],
+        ignores: ['dist'],
+        languageOptions: {
+            ecmaVersion: 2020,
+            globals: globals.browser,
+        },
+        plugins: {
+            'react-hooks': reactHooks,
+            'react-refresh': reactRefresh,
+        },
+        rules: {
+            ...reactHooks.configs.recommended.rules,
+            'react-refresh/only-export-components': 'off',
+            'import/no-anonymous-default-export': 'off',
+        },
+    }),
+    ...compat.config({
+        extends: ['eslint:recommended', 'next'],
+    }),
+    {
+        rules: {
+            'import/no-anonymous-default-export': 'off',
+        },
     },
-    plugins: {
-        'react-hooks': reactHooks,
-        'react-refresh': reactRefresh,
-    },
-    rules: {
-        ...reactHooks.configs.recommended.rules,
-        'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-    },
-});
+];
+export default eslintConfig;
